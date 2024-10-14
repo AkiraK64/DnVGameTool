@@ -27,18 +27,18 @@ namespace DnVCorp
             [Space(10)]
             [Title("Effect", null, TitleAlignments.Centered)]
             [OnValueChanged(nameof(OnFilterChanged))]
-            [SerializeField] private TweenAnimationEffect filter = TweenAnimationEffect.None;
+            [SerializeField] private TweenAnimationEffect filter = TweenAnimationEffect.Transform;
             [Space(5)]
             [TypeFilter("GetFilteredTypeList")]
             [SerializeReference] public RootClass effectClass;
 
-            private string effectName = "None";
+            private string effectName = "Transform";
 
             public IEnumerable<Type> GetFilteredTypeList()
             {
-                var q = typeof(BaseClass).Assembly.GetTypes()     
+                var q = typeof(RootClass).Assembly.GetTypes()     
                               .Where(x => x != typeof(BaseClass))
-                              .Where(x => typeof(BaseClass).IsAssignableFrom(x))                    
+                              .Where(x => typeof(RootClass).IsAssignableFrom(x))                    
                               .Where(x => x.Name.Contains(effectName));
 
                 return q;
@@ -127,6 +127,15 @@ namespace DnVCorp
                 }
             }
 
+            private void OnDestroy()
+            {
+                if (effectClass == null) return;
+
+                if (effectClass.TargetIsNull()) return;
+
+                effectClass.StopTween();
+            }
+
             private void OnEnablePhaseChanged()
             {
                 if (PhaseEnable == TweenAnimationEnable.None) PhaseDisable = TweenAnimationDisable.None;
@@ -176,10 +185,10 @@ namespace DnVCorp
                     return false;
                 }
 
-                public virtual string DurationText()
-                {
-                    return "Duration";
-                }
+                //public virtual string DurationText()
+                //{
+                //    return "Duration";
+                //}
 
                 public virtual void Play()
                 {
@@ -216,9 +225,55 @@ namespace DnVCorp
                     
                 }
             }
+            public class Delay_Time : RootClass
+            {                
+                [SerializeField] protected float Duration = 1;
+                [SerializeField] protected bool IgnoreTimescale = false;
+
+                protected TweenAnimationEvent eventOption;
+                protected Tween thisTween;
+
+                protected Action event_OnStart;
+                protected Action event_OnComplete;
+
+                public override void SetAction(Action eventStart, Action eventComplete)
+                {
+                    event_OnStart = eventStart;
+                    event_OnComplete = eventComplete;
+                }
+                public override TweenAnimationEvent GetEventOption()
+                {
+                    return eventOption;
+                }
+                public override void SetEventOption(TweenAnimationEvent option)
+                {
+                    eventOption = option;
+                }
+                public override void Play()
+                {
+                    if (thisTween.isAlive && thisTween.isPaused) thisTween.isPaused = false;
+                    else PlayTween();
+                }
+                public override void Pause()
+                {
+                    if (thisTween.isAlive) thisTween.isPaused = true;
+                }
+                public override void StopTween()
+                {
+                    thisTween.Stop();
+                }
+                public override void CompleteTween()
+                {
+                    thisTween.Complete();
+                }
+                public override void PlayTween()
+                {
+                    if (eventOption.HasFlag(TweenAnimationEvent.OnStart)) event_OnStart?.Invoke();
+                    thisTween = Tween.Delay(Duration, eventOption.HasFlag(TweenAnimationEvent.OnComplete) ? event_OnComplete : null, IgnoreTimescale);
+                }
+            }
             public class BaseClass : RootClass
             {
-                [LabelText("$DurationText")]
                 [SerializeField] protected float Duration = 1;
                 [SerializeField] protected float Delay = 0;
                 [SerializeField] protected bool IgnoreTimescale = false;
@@ -308,11 +363,7 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }                
+                }             
             }
             public class Transform_LocalMove : BaseClass
             {
@@ -341,11 +392,7 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }                
+                }               
             }
             public class Transform_Rotate : BaseClass
             {
@@ -377,11 +424,7 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }                
+                }               
             }
             public class Transform_LocalRotate : BaseClass
             {
@@ -413,11 +456,7 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }                
+                }              
             }
             public class Transform_Scale : BaseClass
             {
@@ -446,10 +485,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }          
             public class Rect_Anchor2D : BaseClass
@@ -480,10 +515,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Rect_Anchor3D : BaseClass
             {
@@ -512,10 +543,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Rect_AnchorMax : BaseClass
@@ -546,10 +573,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Rect_AnchorMin : BaseClass
             {
@@ -578,10 +601,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Rect_OffsetMax : BaseClass
@@ -612,10 +631,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Rect_OffsetMin : BaseClass
             {
@@ -644,10 +659,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Rect_Pivot : BaseClass
@@ -678,10 +689,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Rect_SizeDelta : BaseClass
             {
@@ -711,10 +718,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Image_Color : BaseClass
             {              
@@ -743,10 +746,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {                   
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Image_Fade : BaseClass
@@ -781,10 +780,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Sprite_Color : BaseClass
             {
@@ -813,10 +808,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Sprite_Fade : BaseClass
@@ -851,10 +842,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Material_Color : BaseClass
             {
@@ -883,10 +870,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Material_Fade : BaseClass
@@ -921,10 +904,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Material_MainTextureOffset : BaseClass
             {
@@ -955,10 +934,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Material_MainTextureScale : BaseClass
             {
@@ -988,10 +963,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Material_Property : BaseClass
@@ -1024,10 +995,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Text_Color : BaseClass
             {
@@ -1056,10 +1023,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Text_Fade : BaseClass
@@ -1094,24 +1057,84 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
-            public class Text_Writing : BaseClass
+            public class Text_Writing : RootClass
             {
+                [SerializeField] protected float CharsPerSecond = 1;
+                [SerializeField] protected float Delay = 0;
+                [SerializeField] protected bool IgnoreTimescale = false;
+                [SerializeField] protected Ease Ease = Ease.OutBack;
+                [ShowIf("$EaseShowIf")]
+                [SerializeField] protected AnimationCurve CustomCurve = AnimationCurve.Linear(0, 0, 1, 1);
+                [OnValueChanged(nameof(OnLoopsChanged))]
+                [SerializeField] protected int Loops = 1;
+                [ShowIf("$LoopModeShowIf")]
+                [SerializeField] protected CycleMode LoopMode = CycleMode.Restart;
+
+                protected TweenAnimationEvent eventOption;
+                protected Tween thisTween;
+
+                protected Action event_OnStart;
+                protected Action event_OnComplete;
+
                 [PropertySpace(SpaceBefore = 20)]
                 [Required("No valid Component was found for the selected animation")]
                 [SerializeField] TMP_Text target;
 
                 string startInfo;
 
+                public override void SetAction(Action eventStart, Action eventComplete)
+                {
+                    event_OnStart = eventStart;
+                    event_OnComplete = eventComplete;
+                }
+                public override TweenAnimationEvent GetEventOption()
+                {
+                    return eventOption;
+                }
+                public override void SetEventOption(TweenAnimationEvent option)
+                {
+                    eventOption = option;
+                }
+
+                void OnLoopsChanged()
+                {
+                    if (Loops == 0) Loops = 1;
+                    else if (Loops < 0) Loops = -1;
+                    if (Loops == 1) LoopMode = CycleMode.Restart;
+                }
+                bool LoopModeShowIf()
+                {
+                    return Loops != 0 && Loops != 1;
+                }
+                bool EaseShowIf()
+                {
+                    return Ease == Ease.Custom;
+                }
+
+                public override void Play()
+                {
+                    if (thisTween.isAlive && thisTween.isPaused) thisTween.isPaused = false;
+                    else PlayTween();
+                }
+                public override void Pause()
+                {
+                    if (thisTween.isAlive) thisTween.isPaused = true;
+                }
+                public override void StopTween()
+                {
+                    thisTween.Stop();
+                }
+                public override void CompleteTween()
+                {
+                    thisTween.Complete();
+                }
+
                 public override void PlayTween()
                 {
                     if (eventOption.HasFlag(TweenAnimationEvent.OnStart)) event_OnStart?.Invoke();
                     int characterCount = target.textInfo.characterCount;
-                    float duration = characterCount / Duration;
+                    float duration = characterCount / CharsPerSecond;
                     thisTween = Tween.TextMaxVisibleCharacters(target, 0, characterCount, duration, (Ease == Ease.Custom) ? CustomCurve : Ease, Loops, LoopMode, Delay, 0.0f, IgnoreTimescale);
                     if (eventOption.HasFlag(TweenAnimationEvent.OnComplete)) thisTween = thisTween.OnComplete(event_OnComplete);
                 }
@@ -1126,10 +1149,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Chars Per Second";
                 }
             }
             public class Light_Color : BaseClass
@@ -1160,10 +1179,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Light_Intensity : BaseClass
             {
@@ -1192,10 +1207,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Light_ShadowStrength : BaseClass
@@ -1226,10 +1237,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Audio_Volume : BaseClass
             {
@@ -1258,10 +1265,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Audio_Pitch : BaseClass
@@ -1292,10 +1295,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }                                 
             public class Punch_Position : BaseClass
             {
@@ -1305,7 +1304,6 @@ namespace DnVCorp
                 [InfoBox("0 is no recoil, 1 is full recoil")]
                 [Range(0f, 1f)]
                 [SerializeField] private float Elasticity = 1f;
-
                 [InfoBox("Can not using custom tween for fade out effect", InfoMessageType.Warning)]
                 [SerializeField] private bool FadeOut = true;
 
@@ -1318,24 +1316,24 @@ namespace DnVCorp
                 public override void PlayTween()
                 {
                     if (eventOption.HasFlag(TweenAnimationEvent.OnStart)) event_OnStart?.Invoke();
-                    thisTween = Tween.PunchLocalPosition(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.OutSine : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
+                    thisTween = Tween.PunchLocalPosition(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.Linear : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
                     if (eventOption.HasFlag(TweenAnimationEvent.OnComplete)) thisTween = thisTween.OnComplete(event_OnComplete);
                 }
                 public override void RewindProperties()
                 {
-                    target.position = StartValue;
+                    target.localPosition = StartValue;
                 }
                 public override void SetupProperties()
                 {
-                    StartValue = target.position;
+                    StartValue = target.localPosition;
                 }
                 public override bool TargetIsNull()
                 {
                     return target == null;
                 }
-                public override string DurationText()
+                protected override bool EaseShowIf()
                 {
-                    return "Duration";
+                    return false;
                 }
             }
             public class Punch_Rotation : BaseClass
@@ -1346,7 +1344,6 @@ namespace DnVCorp
                 [InfoBox("0 is no recoil, 1 is full recoil")]
                 [Range(0f, 1f)]
                 [SerializeField] private float Elasticity = 1f;
-
                 [InfoBox("Can not using custom tween for fade out effect", InfoMessageType.Warning)]
                 [SerializeField] private bool FadeOut = true;
 
@@ -1359,24 +1356,24 @@ namespace DnVCorp
                 public override void PlayTween()
                 {
                     if (eventOption.HasFlag(TweenAnimationEvent.OnStart)) event_OnStart?.Invoke();
-                    thisTween = Tween.PunchLocalRotation(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.OutSine : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
+                    thisTween = Tween.PunchLocalRotation(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.Linear : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
                     if (eventOption.HasFlag(TweenAnimationEvent.OnComplete)) thisTween = thisTween.OnComplete(event_OnComplete);
                 }
                 public override void RewindProperties()
                 {
-                    target.eulerAngles = StartValue;
+                    target.localEulerAngles = StartValue;
                 }
                 public override void SetupProperties()
                 {
-                    StartValue = target.eulerAngles;
+                    StartValue = target.localEulerAngles;
                 }
                 public override bool TargetIsNull()
                 {
                     return target == null;
                 }
-                public override string DurationText()
+                protected override bool EaseShowIf()
                 {
-                    return "Duration";
+                    return false;
                 }
             }
             public class Punch_Scale : BaseClass
@@ -1400,7 +1397,7 @@ namespace DnVCorp
                 public override void PlayTween()
                 {
                     if (eventOption.HasFlag(TweenAnimationEvent.OnStart)) event_OnStart?.Invoke();
-                    thisTween = Tween.PunchScale(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.OutSine : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
+                    thisTween = Tween.PunchScale(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.Linear : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
                     if (eventOption.HasFlag(TweenAnimationEvent.OnComplete)) thisTween = thisTween.OnComplete(event_OnComplete);
                 }
                 public override void RewindProperties()
@@ -1415,9 +1412,9 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
+                protected override bool EaseShowIf()
                 {
-                    return "Duration";
+                    return false;
                 }
             }
             public class Shake_Position : BaseClass
@@ -1428,7 +1425,6 @@ namespace DnVCorp
                 [InfoBox("0 is no recoil, 1 is full recoil")]
                 [Range(0f, 1f)]
                 [SerializeField] private float Elasticity = 1f;
-
                 [InfoBox("Can not using custom tween for fade out effect", InfoMessageType.Warning)]
                 [SerializeField] private bool FadeOut = true;
 
@@ -1441,24 +1437,24 @@ namespace DnVCorp
                 public override void PlayTween()
                 {
                     if (eventOption.HasFlag(TweenAnimationEvent.OnStart)) event_OnStart?.Invoke();
-                    thisTween = Tween.ShakeLocalPosition(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.OutSine : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
+                    thisTween = Tween.ShakeLocalPosition(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.Linear : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
                     if (eventOption.HasFlag(TweenAnimationEvent.OnComplete)) thisTween = thisTween.OnComplete(event_OnComplete);
                 }
                 public override void RewindProperties()
                 {
-                    target.position = StartValue;
+                    target.localPosition = StartValue;
                 }
                 public override void SetupProperties()
                 {
-                    StartValue = target.position;
+                    StartValue = target.localPosition;
                 }
                 public override bool TargetIsNull()
                 {
                     return target == null;
                 }
-                public override string DurationText()
+                protected override bool EaseShowIf()
                 {
-                    return "Duration";
+                    return false;
                 }
             }
             public class Shake_Rotation : BaseClass
@@ -1469,7 +1465,6 @@ namespace DnVCorp
                 [InfoBox("0 is no recoil, 1 is full recoil")]
                 [Range(0f, 1f)]
                 [SerializeField] private float Elasticity = 1f;
-
                 [InfoBox("Can not using custom tween for fade out effect", InfoMessageType.Warning)]
                 [SerializeField] private bool FadeOut = true;
 
@@ -1482,24 +1477,24 @@ namespace DnVCorp
                 public override void PlayTween()
                 {
                     if (eventOption.HasFlag(TweenAnimationEvent.OnStart)) event_OnStart?.Invoke();
-                    thisTween = Tween.ShakeLocalRotation(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.OutSine : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
+                    thisTween = Tween.ShakeLocalRotation(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.Linear : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
                     if (eventOption.HasFlag(TweenAnimationEvent.OnComplete)) thisTween = thisTween.OnComplete(event_OnComplete);
                 }
                 public override void RewindProperties()
                 {
-                    target.eulerAngles = StartValue;
+                    target.localEulerAngles = StartValue;
                 }
                 public override void SetupProperties()
                 {
-                    StartValue = target.eulerAngles;
+                    StartValue = target.localEulerAngles;
                 }
                 public override bool TargetIsNull()
                 {
                     return target == null;
                 }
-                public override string DurationText()
+                protected override bool EaseShowIf()
                 {
-                    return "Duration";
+                    return false;
                 }
             }
             public class Shake_Scale : BaseClass
@@ -1510,7 +1505,6 @@ namespace DnVCorp
                 [InfoBox("0 is no recoil, 1 is full recoil")]
                 [Range(0f, 1f)]
                 [SerializeField] private float Elasticity = 1f;
-
                 [InfoBox("Can not using custom tween for fade out effect", InfoMessageType.Warning)]
                 [SerializeField] private bool FadeOut = true;
 
@@ -1523,7 +1517,7 @@ namespace DnVCorp
                 public override void PlayTween()
                 {
                     if (eventOption.HasFlag(TweenAnimationEvent.OnStart)) event_OnStart?.Invoke();
-                    thisTween = Tween.ShakeScale(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.OutSine : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
+                    thisTween = Tween.ShakeScale(target, EndValue, Duration, Vibrato, FadeOut, (Ease == Ease.Custom) ? Ease.Linear : Ease, 1 - Elasticity, Loops, Delay, 0.0f, IgnoreTimescale);
                     if (eventOption.HasFlag(TweenAnimationEvent.OnComplete)) thisTween = thisTween.OnComplete(event_OnComplete);
                 }
                 public override void RewindProperties()
@@ -1538,9 +1532,9 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
+                protected override bool EaseShowIf()
                 {
-                    return "Duration";
+                    return false;
                 }
             }
             public class Camera_Color : BaseClass
@@ -1571,10 +1565,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Camera_Far : BaseClass
             {
@@ -1604,10 +1594,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Camera_Near : BaseClass
             {
@@ -1636,10 +1622,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Camera_FOV : BaseClass
@@ -1671,10 +1653,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Camera_OrthoSize : BaseClass
             {
@@ -1704,10 +1682,6 @@ namespace DnVCorp
                 {
                     return target == null;
                 }
-                public override string DurationText()
-                {
-                    return "Duration";
-                }
             }
             public class Camera_PixelRect : BaseClass
             {
@@ -1736,10 +1710,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }
             public class Camera_Rect : BaseClass
@@ -1772,11 +1742,6 @@ namespace DnVCorp
                 public override bool TargetIsNull()
                 {
                     return target == null;
-                }
-
-                public override string DurationText()
-                {
-                    return "Duration";
                 }
             }                                         
         }

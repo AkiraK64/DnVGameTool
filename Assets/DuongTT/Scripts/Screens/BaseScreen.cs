@@ -25,7 +25,7 @@ namespace DnVCorp
             [SerializeField] bool hasAnimation;
             [ShowIf("hasAnimation")]
             [Required]
-            [SerializeField] OnceAnimation UIAnimation;
+            [SerializeField] UIScreenAnimation UIAnimation;
 
             #region Phase Handle
             private void Awake()

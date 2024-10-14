@@ -48,7 +48,6 @@ namespace DnVCorp
 
         public enum TweenAnimationEffect
         {
-            None,
             Transform,
             Rect,
             Image,
@@ -60,7 +59,8 @@ namespace DnVCorp
             Progress,
             Punch,
             Shake,
-            Camera
+            Camera,
+            Delay
         }
 
         [System.Flags]
